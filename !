@@ -1,0 +1,13 @@
+Add inventoty ip
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Thu Jan 28 22:26:31 2021 +0100
+#
+# On branch main
+# Your branch is up to date with 'upstream/main'.
+#
+# Changes to be committed:
+#	modified:   .circleci/config.yml
+#
