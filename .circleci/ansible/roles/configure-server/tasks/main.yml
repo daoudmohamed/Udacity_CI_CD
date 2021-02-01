@@ -7,10 +7,10 @@
   apt:
     update_cache: true
 
-- name: "Install nodejs & npm"
+- name: "Install nodejs"
   become: yes
   apt:
-    name: ["nodejs","npm"]
+    name: "nodejs"
     state: present
 
 - name: "Install pm2"

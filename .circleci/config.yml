@@ -123,6 +123,15 @@ jobs:
               --stack-name "udaPeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
 
+            url=$(aws ec2 describe-instances \
+              --query "Reservations[*].Instances[*].PublicDnsName" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text)
+
+            curl -H "Content-Type: text/plain" -H "token: ${memstash_token}" \
+              --request PUT \
+              --data $url https://api.memstash.io/values/url-${CIRCLE_WORKFLOW_ID:0:7}
+
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -191,6 +200,32 @@ jobs:
             fi
      # Here's where you will add some code to rollback on failure      
 
+  deploy-frontend:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          working_directory: frontend
+          command: |
+            curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
+            yum -y install nodejs 
+            npm install --global webpack
+            npm install -D webpack-cli
+      - run:
+          name: Get backend url
+          command: |
+            BACKEND_IP=$(curl -H "token: ${memstash_token}" --request GET https://api.memstash.io/values/url-${CIRCLE_WORKFLOW_ID:0:7})
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+      - run:
+          name: Deploy frontend objects
+          working_directory: frontend
+          command: |
+            npm run build
+            aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      # Here's where you will add some code to rollback on failure   
 
 workflows:
   default:
@@ -214,3 +249,5 @@ workflows:
           requires: [deploy-infrastructure]
       - run-migrations:
           requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
