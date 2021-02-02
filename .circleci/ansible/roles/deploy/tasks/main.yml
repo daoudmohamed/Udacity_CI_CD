@@ -1,0 +1,48 @@
+---
+- name: "update apt packages."
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: "upgrade packages"
+  become: yes
+  apt:
+    upgrade: yes
+    
+- name: remove dependencies that are no longer required
+  become: yes
+  apt:
+    autoremove: yes
+
+- name: Creates directory
+  file:
+    path: ~/backend
+    state: directory
+
+- name: Copy files
+  copy:
+    src: "/root/project/backend.tar.gz"
+    dest: "~/web/"
+
+- name: Extract backend.tgz
+  unarchive:
+    src: ~/web/backend.tar.gz
+    dest: ~/web
+    remote_src: true
+
+- name: Executing node
+  shell: |
+    cd ~/web/backend/
+    echo {{ lookup('env', 'TYPEORM_CONNECTION') }}
+    echo "ENVIRONMENT = production" > .env
+    echo TYPEORM_CONNECTION= {{ lookup('env', 'TYPEORM_CONNECTION') }} >> .env
+    echo TYPEORM_ENTITIES= {{ lookup('env', 'TYPEORM_ENTITIES') }} >> .env
+    echo TYPEORM_HOST= {{ lookup('env', 'TYPEORM_HOST') }} >> .env
+    echo TYPEORM_PORT= {{ lookup('env', 'TYPEORM_PORT') }} >> .env
+    echo TYPEORM_USERNAME= {{ lookup('env', 'TYPEORM_USERNAME') }} >> .env
+    echo TYPEORM_PASSWORD= {{ lookup('env', 'TYPEORM_PASSWORD') }} >> .env
+    echo TYPEORM_DATABASE= {{ lookup('env', 'TYPEORM_DATABASE') }} >> .env
+    cat .env
+    npm i
+    npm run build
+    pm2 start --no-autorestart npm -- start
